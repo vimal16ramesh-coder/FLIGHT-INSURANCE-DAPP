@@ -1,0 +1,50 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+  <div class="container">
+    <a class="navbar-brand font-weight-bold" routerLink="/">
+      <i class="fas fa-shield-alt mr-2"></i>FlightInsure
+    </a>
+    
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/buy-policy" routerLinkActive="active">
+            <i class="fas fa-plus-circle mr-1"></i>Buy Policy
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/my-policies" routerLinkActive="active">
+            <i class="fas fa-file-contract mr-1"></i>My Policies
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/claim-status" routerLinkActive="active">
+            <i class="fas fa-search-dollar mr-1"></i>Claim Status
+          </a>
+        </li>
+      </ul>
+      
+      <div class="ml-lg-3 mt-2 mt-lg-0">
+        <button *ngIf="!walletService.account" 
+                class="btn btn-outline-light btn-sm" 
+                (click)="walletService.connectWallet()">
+          <i class="fas fa-wallet mr-1"></i>Connect Wallet
+        </button>
+        <div *ngIf="walletService.account" class="text-light">
+          <small class="text-light-50">Connected:</small>
+          <br>
+          <small>{{ walletService.account | slice:0:6 }}...{{ walletService.account | slice:-4 }}</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container-fluid bg-light min-vh-100">
+  <div class="container py-4">
+    <router-outlet></router-outlet>
+  </div>
+</div>

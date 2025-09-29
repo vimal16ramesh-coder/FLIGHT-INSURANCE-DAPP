@@ -1,0 +1,40 @@
+/* You can add global styles to this file, and also import other style files */
+.border-left-3 {
+    border-left: 3px solid #007bff !important;
+}
+
+.policy-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    border: 1px solid #e3f2fd;
+}
+
+.policy-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+}
+
+.card-header {
+    border-bottom: 2px solid rgba(0,0,0,0.1);
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+}
+
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.form-control {
+    border-radius: 6px;
+}
+
+.badge-pill {
+    border-radius: 12px;
+}

@@ -1,0 +1,78 @@
+<div class="row">
+  <div class="col-12">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">
+          <i class="fas fa-file-contract mr-2"></i>My Insurance Policies
+        </h4>
+        <span class="badge badge-light badge-pill">{{ policies.length }} policies</span>
+      </div>
+      
+      <div class="card-body">
+        <div *ngIf="!walletService.account" class="alert alert-info text-center">
+          <i class="fas fa-wallet mr-2"></i>Please connect your wallet to view your policies
+        </div>
+
+        <div *ngIf="loading" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">Loading...</span>
+          </div>
+          <p class="mt-2 text-muted">Loading your policies...</p>
+        </div>
+
+        <div *ngIf="!loading && walletService.account && policies.length === 0" 
+             class="text-center py-5">
+          <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+          <h5 class="text-muted">No Policies Found</h5>
+          <p class="text-muted">You haven't purchased any insurance policies yet.</p>
+          <a routerLink="/buy-policy" class="btn btn-primary mt-2">
+            <i class="fas fa-plus-circle mr-1"></i>Buy Your First Policy
+          </a>
+        </div>
+
+        <div *ngIf="!loading && policies.length > 0" class="row">
+          <div *ngFor="let p of policies; let i = index" class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 policy-card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <strong>Policy #{{ i + 1 }}</strong>
+                <span [class]="isClaimed(p) ? 'badge-success' : 'badge-warning'" 
+                      class="badge badge-pill">
+                  {{ isClaimed(p) ? 'Claimed' : 'Active' }}
+                </span>
+              </div>
+              <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                  <i class="fas fa-plane text-primary fa-lg mr-3"></i>
+                  <div>
+                    <h6 class="mb-0 font-weight-bold">Flight ID</h6>
+                    <span class="text-muted">{{ p.flightId }}</span>
+                  </div>
+                </div>
+                
+                <div class="d-flex align-items-center mb-3">
+                  <i class="fas fa-calendar text-primary fa-lg mr-3"></i>
+                  <div>
+                    <h6 class="mb-0 font-weight-bold">Flight Date</h6>
+                    <span class="text-muted">{{ (p.date.toNumber() * 1000) | date:'fullDate' }}</span>
+                  </div>
+                </div>
+                
+                <div class="d-flex align-items-center">
+                  <i class="fas fa-shield-alt text-primary fa-lg mr-3"></i>
+                  <div>
+                    <h6 class="mb-0 font-weight-bold">Status</h6>
+                    <span [class]="isClaimed(p) ? 'text-success' : 'text-warning'" 
+                          class="font-weight-bold">
+                      {{ isClaimed(p) ? 'Claim Processed' : 'Coverage Active' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
