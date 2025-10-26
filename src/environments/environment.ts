@@ -3,8 +3,10 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  production: false
+  production: false,
+  contractAddress: '0x9B89D071445C5ac084aBfa1EEb076A94B74635fc' // change per-network
 };
+
 
 /*
  * For easier debugging in development mode, you can import the following file

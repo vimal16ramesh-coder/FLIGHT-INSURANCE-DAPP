@@ -1,79 +1,109 @@
+// src/app/core/services/contract.service.ts
 import { Injectable } from '@angular/core';
 import { ethers } from 'ethers';
 import { WalletService } from './wallet.service';
 
-const contractAddress = '0x9B89D071445C5ac084aBfa1EEb076A94B74635fc';  // Replace with real contract address
+const contractAddress = '0x9B89D071445C5ac084aBfa1EEb076A94B74635fc';
 
+// ABI - ensure this matches the deployed contract on Sepolia
 const contractABI = [
-  "function buyPolicy(string flightId, uint256 date) public",
-  "function policies(address user) public view returns (tuple(string flightId, uint256 date, bool claimed)[])",
-  "function isClaimed(address user, uint256 index) public view returns (bool)"
+  "function owner() view returns (address)",
+  "function setOracle(address _oracle) external",
+  "function oracle() view returns (address)",
+  "function deposit() external payable",
+  "function buyPolicy(string flightId) external payable",
+  "function policies(uint256) view returns (address user, string flightId, uint256 premium, uint256 payoutAmount, bool active)",
+  "function policyCount() view returns (uint256)",
+  "function pendingWithdrawals(address) view returns (uint256)",
+  "function withdrawPayout() external"
 ];
 
 @Injectable({
   providedIn: 'root'
 })
 export class ContractService {
-  private contract?: ethers.Contract;
-
+  // Do NOT reuse one single contract instance for both read/write modes.
+  // We'll create on-demand contract instances connected to provider or signer.
   constructor(private walletService: WalletService) {}
 
-  private async getContract() {
-    if (!this.contract && this.walletService.signer) {
-      this.contract = new ethers.Contract(contractAddress, contractABI, this.walletService.signer);
+  private async createContract(readOnly = false) {
+    if (!this.walletService.provider) {
+      throw new Error('Provider not initialized. Connect MetaMask first.');
     }
-    return this.contract;
+    const backend = readOnly
+      ? this.walletService.provider
+      : (this.walletService.signer ?? this.walletService.provider);
+
+    // Always create a fresh Contract object (cheap) so signer vs provider are correct.
+    return new ethers.Contract(contractAddress, contractABI, backend);
   }
 
-  async buyPolicy(flightId: string, date: number) {
-    const contract = await this.getContract();
-    if (contract) {
-      const tx = await contract.buyPolicy(flightId, date);
-      await tx.wait();
-    }
+  // BUY a policy (value in ETH string like "0.01")
+  async buyPolicy(flightId: string, premiumEth: string) {
+    const contract = await this.createContract(false); // require signer for tx
+    const value = ethers.utils.parseEther(premiumEth);
+    const tx = await contract.buyPolicy(flightId, { value });
+    return tx.wait();
   }
 
-  async getPolicies(userAddress: string) {
-    const contract = await this.getContract();
-    if (contract) {
-      return contract.policies(userAddress);
-    }
-    return [];
-  }
-
-  async checkClaimed(userAddress: string, index: number) {
-    const contract = await this.getContract();
-    if (contract) {
-      return contract.isClaimed(userAddress, index);
-    }
-    return false;
-  }
   async getOwner() {
-  const contract = await this.getContract();
-  return await contract.owner();
-}
+    const contract = await this.createContract(true);
+    return contract.owner();
+  }
 
-async setOracle(address: string) {
-  const contract = await this.getContract();
-  const tx = await contract.setOracle(address);
-  await tx.wait();
-}
+  async setOracle(addr: string) {
+    const contract = await this.createContract(false);
+    const tx = await contract.setOracle(addr);
+    return tx.wait();
+  }
 
-async getOracle() {
-  const contract = await this.getContract();
-  return contract.oracle();
-}
+  async getOracle() {
+    const contract = await this.createContract(true);
+    return contract.oracle();
+  }
 
-async deposit(amountInWei: string) {
-  const contract = await this.getContract();
-  // Only owner can call deposit
-  const tx = await contract.deposit({ value: amountInWei });
-  await tx.wait();
-}
+  async deposit(amountInWei: string) {
+    const contract = await this.createContract(false);
+    const tx = await contract.deposit({ value: amountInWei });
+    return tx.wait();
+  }
 
-async getContractBalance() {
-  const contract = await this.getContract();
-  // You'll need to call this via a public getter or use ethers.js: provider.getBalance(contract.address)
-  return (await contract.provider.getBalance(contract.address)).toString();
-}
+  async getContractBalance() {
+    if (!this.walletService.provider) throw new Error("Provider not ready");
+    const bal = await this.walletService.provider.getBalance(contractAddress);
+    return bal.toString();
+  }
+
+  // Return only policies that belong to userAddress
+  async getPoliciesForUser(userAddress: string) {
+    const contract = await this.createContract(true);
+    const countBN = await contract.policyCount();
+    const count = (countBN && countBN.toNumber) ? countBN.toNumber() : Number(countBN);
+    const policies: any[] = [];
+
+    for (let i = 0; i < count; i++) {
+      try {
+        const p = await contract.policies(i);
+        // p: (user, flightId, premium, payoutAmount, active)
+        if (p.user && p.user.toLowerCase() === userAddress.toLowerCase()) {
+          policies.push({
+            id: i,
+            user: p.user,
+            flightId: p.flightId,
+            premium: p.premium,          // BigNumber
+            payoutAmount: p.payoutAmount,// BigNumber
+            active: p.active
+          });
+        }
+      } catch (err) {
+        console.warn(`Failed reading policy ${i}`, err);
+      }
+    }
+    return policies;
+  }
+
+  async getPendingWithdrawal(addr: string) {
+    const contract = await this.createContract(true);
+    return contract.pendingWithdrawals(addr);
+  }
 }

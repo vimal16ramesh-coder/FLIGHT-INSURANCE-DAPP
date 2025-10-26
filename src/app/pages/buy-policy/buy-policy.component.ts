@@ -13,22 +13,25 @@ export class BuyPolicyComponent {
 
   constructor(public walletService: WalletService, private contractService: ContractService) {}
 
-  async buyPolicy() {
-    if (!this.flightId || !this.date) {
-      alert('Please fill Flight ID and Flight Date');
-      return;
-    }
-    this.loading = true;
-    try {
-      const timestamp = Math.floor(new Date(this.date).getTime() / 1000);
-      await this.contractService.buyPolicy(this.flightId, timestamp);
-      alert('Policy purchased!');
-      this.flightId = '';
-      this.date = '';
-    } catch (err) {
-      alert('Failed to buy policy');
-      console.error(err);
-    }
-    this.loading = false;
+    async buyPolicy() {
+  if (!this.flightId || !this.date) {
+    alert('Please fill Flight ID and Flight Date');
+    return;
   }
+  this.loading = true;
+  try {
+    // pick premium e.g. 0.01 ETH — or ask user for premium input
+    const premiumInEth = "0.01";
+    await this.contractService.buyPolicy(this.flightId, premiumInEth);
+    alert('Policy purchased!');
+    this.flightId = '';
+    this.date = '';
+  } catch (err) {
+    console.error(err);
+    alert('Failed to buy policy: ' + (err && err.message ? err.message : err));
+  }
+  this.loading = false;
+}
+
+
 }
