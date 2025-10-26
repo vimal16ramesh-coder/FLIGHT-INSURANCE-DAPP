@@ -25,12 +25,18 @@
             <i class="fas fa-search-dollar mr-1"></i>Claim Status
           </a>
         </li>
+        <!-- Admin displayed only if user is owner -->
+        <li class="nav-item" *ngIf="isOwner">
+          <a class="nav-link" routerLink="/admin" routerLinkActive="active">
+            <i class="fas fa-user-shield mr-1"></i>Admin
+          </a>
+        </li>
       </ul>
       
       <div class="ml-lg-3 mt-2 mt-lg-0">
         <button *ngIf="!walletService.account" 
                 class="btn btn-outline-light btn-sm" 
-                (click)="walletService.connectWallet()">
+                (click)="connectWallet()">
           <i class="fas fa-wallet mr-1"></i>Connect Wallet
         </button>
         <div *ngIf="walletService.account" class="text-light">
@@ -46,5 +52,5 @@
 <div class="container-fluid bg-light min-vh-100">
   <div class="container py-4">
     <router-outlet></router-outlet>
-  </div>
+  </div>
 </div>

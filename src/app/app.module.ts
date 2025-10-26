@@ -9,13 +9,15 @@ import { AppComponent } from './app.component';
 import { BuyPolicyComponent } from './pages/buy-policy/buy-policy.component';
 import { MyPoliciesComponent } from './pages/my-policies/my-policies.component';
 import { ClaimStatusComponent } from './pages/claim-status/claim-status.component';
+import { AdminDashboardComponent } from './pages/admin-dashboard/admin-dashboard.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     BuyPolicyComponent,
     MyPoliciesComponent,
-    ClaimStatusComponent
+    ClaimStatusComponent,
+    AdminDashboardComponent
   ],
   imports: [
     BrowserModule,

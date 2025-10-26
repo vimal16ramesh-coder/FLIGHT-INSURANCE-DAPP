@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { ethers } from 'ethers';
 import { WalletService } from './wallet.service';
 
-const contractAddress = '0xYourContractAddressHere';  // Replace with real contract address
+const contractAddress = '0x9B89D071445C5ac084aBfa1EEb076A94B74635fc';  // Replace with real contract address
 
 const contractABI = [
   "function buyPolicy(string flightId, uint256 date) public",
@@ -48,4 +48,32 @@ export class ContractService {
     }
     return false;
   }
+  async getOwner() {
+  const contract = await this.getContract();
+  return await contract.owner();
+}
+
+async setOracle(address: string) {
+  const contract = await this.getContract();
+  const tx = await contract.setOracle(address);
+  await tx.wait();
+}
+
+async getOracle() {
+  const contract = await this.getContract();
+  return contract.oracle();
+}
+
+async deposit(amountInWei: string) {
+  const contract = await this.getContract();
+  // Only owner can call deposit
+  const tx = await contract.deposit({ value: amountInWei });
+  await tx.wait();
+}
+
+async getContractBalance() {
+  const contract = await this.getContract();
+  // You'll need to call this via a public getter or use ethers.js: provider.getBalance(contract.address)
+  return (await contract.provider.getBalance(contract.address)).toString();
+}
 }
