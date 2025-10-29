@@ -21,7 +21,7 @@ export class BuyPolicyComponent {
   this.loading = true;
   try {
     // pick premium e.g. 0.01 ETH — or ask user for premium input
-    const premiumInEth = "0.01";
+    const premiumInEth = "0.005";
     await this.contractService.buyPolicy(this.flightId, premiumInEth);
     alert('Policy purchased!');
     this.flightId = '';

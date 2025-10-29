@@ -1,3 +1,4 @@
+<!-- src/app/pages/my-policies/my-policies.component.html -->
 <div class="row">
   <div class="col-12">
     <div class="card shadow-sm border-0">
@@ -35,8 +36,7 @@
             <div class="card h-100 policy-card">
               <div class="card-header d-flex justify-content-between align-items-center">
                 <strong>Policy #{{ i + 1 }}</strong>
-                <span [class]="isClaimed(p) ? 'badge-success' : 'badge-warning'" 
-                      class="badge badge-pill">
+                <span class="badge badge-pill" [ngClass]="isClaimed(p) ? 'badge-success' : 'badge-warning'">
                   {{ isClaimed(p) ? 'Claimed' : 'Active' }}
                 </span>
               </div>
@@ -53,7 +53,8 @@
                   <i class="fas fa-calendar text-primary fa-lg mr-3"></i>
                   <div>
                     <h6 class="mb-0 font-weight-bold">Flight Date</h6>
-                    <span class="text-muted">{{ (p.date.toNumber() * 1000) | date:'fullDate' }}</span>
+                    <!-- safe display using component helper; will show 'N/A' if not stored on-chain -->
+                    <span class="text-muted">{{ dateString(p) }}</span>
                   </div>
                 </div>
                 
@@ -61,18 +62,24 @@
                   <i class="fas fa-shield-alt text-primary fa-lg mr-3"></i>
                   <div>
                     <h6 class="mb-0 font-weight-bold">Status</h6>
-                    <span [class]="isClaimed(p) ? 'text-success' : 'text-warning'" 
-                          class="font-weight-bold">
+                    <span class="font-weight-bold" [ngClass]="isClaimed(p) ? 'text-success' : 'text-warning'">
                       {{ isClaimed(p) ? 'Claim Processed' : 'Coverage Active' }}
                     </span>
                   </div>
+                </div>
+
+                <!-- optional: show premium/payout if present -->
+                <div *ngIf="p.premiumEth" class="mt-3">
+                  <small class="text-muted">Premium: {{ p.premiumEth }} ETH</small>
+                </div>
+                <div *ngIf="p.payoutEth">
+                  <small class="text-muted">Payout: {{ p.payoutEth }} ETH</small>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </div> <!-- card-body -->
     </div>
   </div>
 </div>
-
