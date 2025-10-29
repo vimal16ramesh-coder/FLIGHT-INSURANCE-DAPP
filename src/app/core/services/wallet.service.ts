@@ -61,4 +61,29 @@ export class WalletService {
     if (!this.provider) return undefined;
     return await this.provider.getNetwork();
   }
+  // Replace or add the method in your ContractService class file.
+// Keep the rest of your existing ContractService code; just ensure this method exists.
+
+
+// Add this method inside the exported ContractService class
+
+
+async withdrawPayout(policyId?: number) {
+// createContract should return a signer-enabled contract when passed `true` or similar
+// Adjust createContract call if your existing method signature differs.
+const contract: any = await this.createContract(true); // true -> use signer
+
+
+// If the contract method requires a policy id, pass it. If not, call without args.
+if (typeof policyId !== 'undefined' && policyId !== null) {
+const tx = await contract.withdrawPayout(policyId);
+return tx.wait();
+} else {
+const tx = await contract.withdrawPayout();
+return tx.wait();
+}
+}
+  createContract(arg0: boolean): any {
+    throw new Error('Method not implemented.');
+  }
 }
