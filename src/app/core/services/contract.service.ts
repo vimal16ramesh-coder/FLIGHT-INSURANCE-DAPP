@@ -2,8 +2,9 @@
 import { Injectable } from '@angular/core';
 import { ethers } from 'ethers';
 import { WalletService } from './wallet.service';
+import { environment } from '../../../environments/environment';
 
-const contractAddress = '0x9B89D071445C5ac084aBfa1EEb076A94B74635fc';
+const contractAddress = environment.contractAddress;
 
 // ABI - ensure this matches the deployed contract on Sepolia
 const contractABI = [
@@ -12,6 +13,8 @@ const contractABI = [
   "function oracle() view returns (address)",
   "function deposit() external payable",
   "function buyPolicy(string flightId) external payable",
+  // If your contract includes a date (uint256) in the policy struct, add it at the end
+  // Below we still call the same function; we'll defensively read p[5] as date if present
   "function policies(uint256) view returns (address user, string flightId, uint256 premium, uint256 payoutAmount, bool active)",
   "function policyCount() view returns (uint256)",
   "function pendingWithdrawals(address) view returns (uint256)",
@@ -22,8 +25,6 @@ const contractABI = [
   providedIn: 'root'
 })
 export class ContractService {
-  // Do NOT reuse one single contract instance for both read/write modes.
-  // We'll create on-demand contract instances connected to provider or signer.
   constructor(private walletService: WalletService) {}
 
   private async createContract(readOnly = false) {
@@ -34,13 +35,12 @@ export class ContractService {
       ? this.walletService.provider
       : (this.walletService.signer ?? this.walletService.provider);
 
-    // Always create a fresh Contract object (cheap) so signer vs provider are correct.
     return new ethers.Contract(contractAddress, contractABI, backend);
   }
 
   // BUY a policy (value in ETH string like "0.01")
   async buyPolicy(flightId: string, premiumEth: string) {
-    const contract = await this.createContract(false); // require signer for tx
+    const contract = await this.createContract(false); // require signer
     const value = ethers.utils.parseEther(premiumEth);
     const tx = await contract.buyPolicy(flightId, { value });
     return tx.wait();
@@ -84,15 +84,18 @@ export class ContractService {
     for (let i = 0; i < count; i++) {
       try {
         const p = await contract.policies(i);
-        // p: (user, flightId, premium, payoutAmount, active)
+        // p: (user, flightId, premium, payoutAmount, active [, date?])
         if (p.user && p.user.toLowerCase() === userAddress.toLowerCase()) {
+          const possibleDate = (p as any).date ?? (p as any)[5];
           policies.push({
             id: i,
             user: p.user,
             flightId: p.flightId,
-            premium: p.premium,          // BigNumber
-            payoutAmount: p.payoutAmount,// BigNumber
-            active: p.active
+            premium: p.premium,
+            payoutAmount: p.payoutAmount,
+            active: p.active,
+            // optional: if tuple has index 5 as date
+            date: possibleDate !== undefined ? possibleDate : undefined
           });
         }
       } catch (err) {
@@ -105,5 +108,12 @@ export class ContractService {
   async getPendingWithdrawal(addr: string) {
     const contract = await this.createContract(true);
     return contract.pendingWithdrawals(addr);
+  }
+
+  // --- NEW: wrapper to call withdrawPayout (requires signer) ---
+  async withdrawPayout() {
+    const contract = await this.createContract(false);
+    const tx = await contract.withdrawPayout();
+    return tx.wait();
   }
 }

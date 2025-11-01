@@ -9,7 +9,8 @@ import { AppComponent } from './app.component';
 import { BuyPolicyComponent } from './pages/buy-policy/buy-policy.component';
 import { MyPoliciesComponent } from './pages/my-policies/my-policies.component';
 import { ClaimStatusComponent } from './pages/claim-status/claim-status.component';
-import { AdminDashboardComponent } from './pages/admin-dashboard/admin-dashboard.component';
+// import { AdminDashboardComponent } from './pages/admin-dashboard/admin-dashboard.component'; // admin disabled
+import { ContractDetailsComponent } from './pages/contract-details/contract-details.component';
 
 @NgModule({
   declarations: [
@@ -17,7 +18,7 @@ import { AdminDashboardComponent } from './pages/admin-dashboard/admin-dashboard
     BuyPolicyComponent,
     MyPoliciesComponent,
     ClaimStatusComponent,
-    AdminDashboardComponent
+    ContractDetailsComponent
   ],
   imports: [
     BrowserModule,

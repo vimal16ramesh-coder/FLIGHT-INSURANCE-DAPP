@@ -23,9 +23,14 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   async checkIsOwner() {
-    //if (!this.walletService.account) return;
-    const owner = await this.contractService.getOwner();
-    this.isOwner = owner.toLowerCase() === this.walletService.account!.toLowerCase();
+    try {
+      const owner = await this.contractService.getOwner();
+      const acct = this.walletService.account;
+      this.isOwner = !!acct && !!owner && owner.toLowerCase() === acct.toLowerCase();
+    } catch (e) {
+      console.warn('Owner check failed:', e);
+      this.isOwner = false;
+    }
   }
 
   async loadContractBalance() {

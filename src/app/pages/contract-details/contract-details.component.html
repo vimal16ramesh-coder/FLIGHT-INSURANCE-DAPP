@@ -1,0 +1,61 @@
+<div class="container my-4">
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center py-3">
+          <h5 class="mb-0">
+            <i class="fas fa-file-alt mr-2"></i>Contract Details
+          </h5>
+          <span class="badge badge-light badge-pill px-3 py-2">Read-only</span>
+        </div>
+
+        <div class="card-body p-4">
+          <div class="row">
+            <div class="col-md-8">
+              <ul class="list-group list-group-flush">
+                <li class="list-group-item px-0 d-flex align-items-center justify-content-between">
+                  <div>
+                    <div class="text-muted small">Address</div>
+                    <code class="d-block mt-1">{{ address }}</code>
+                  </div>
+                  <button class="btn btn-outline-secondary btn-sm" [disabled]="!hasClipboard" (click)="copyAddress()">
+                    <i class="fas fa-copy mr-1"></i>Copy
+                  </button>
+                </li>
+
+                <li class="list-group-item px-0 d-flex align-items-center justify-content-between">
+                  <div>
+                    <div class="text-muted small">Owner</div>
+                    <span class="badge badge-secondary badge-pill px-3 py-2">{{ owner || 'N/A' }}</span>
+                  </div>
+                </li>
+
+                <li class="list-group-item px-0 d-flex align-items-center justify-content-between">
+                  <div>
+                    <div class="text-muted small">Oracle</div>
+                    <span class="badge badge-secondary badge-pill px-3 py-2">{{ oracle || 'N/A' }}</span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            <div class="col-md-4 mt-4 mt-md-0">
+              <div class="card bg-light border-0 shadow-sm">
+                <div class="card-body text-center py-4">
+                  <div class="text-muted small mb-1">Balance (Wei)</div>
+                  <h4 class="mb-0 text-info">{{ balanceWei || '0' }}</h4>
+                </div>
+              </div>
+              <p class="text-muted small mt-2 mb-0">
+                Balance shown in Wei based on current provider.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+

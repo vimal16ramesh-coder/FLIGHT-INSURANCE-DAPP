@@ -1,22 +1,24 @@
-<div *ngIf="!isOwner" class="alert alert-danger">Not authorized. Only contract owner can access this page.</div>
-<div *ngIf="isOwner">
-  <h2>Admin Dashboard</h2>
-  <div>
-    <strong>Contract Balance:</strong> {{ contractBalance }} Wei
-  </div>
-  <div>
-    <strong>Oracle Address:</strong> {{ oracle }}
-  </div>
-  <hr>
-  <div>
-    <h3>Set Oracle Address</h3>
-    <input type="text" [(ngModel)]="oracleInput" placeholder="Oracle Address" />
-    <button (click)="setOracle()" class="btn btn-primary">Set Oracle</button>
-  </div>
-  <hr>
-  <div>
-    <h3>Fund Contract</h3>
-    <input type="text" [(ngModel)]="depositAmount" placeholder="Amount in ETH" />
-    <button (click)="deposit()" class="btn btn-success">Deposit</button>
-  </div>
+<div *ngIf="!isOwner" class="alert alert-warning">
+  You are not the contract owner. You can view data, but admin actions are disabled.
+  Ask the owner to perform admin actions or deploy a contract where you are the owner.
+</div>
+
+<h2>Admin Dashboard</h2>
+<div class="mb-2">
+  <strong>Contract Balance:</strong> {{ contractBalance }} Wei
+</div>
+<div class="mb-3">
+  <strong>Oracle Address:</strong> {{ oracle }}
+</div>
+<hr>
+<div class="mb-3">
+  <h3>Set Oracle Address</h3>
+  <input class="form-control mb-2" type="text" [(ngModel)]="oracleInput" placeholder="Oracle Address" />
+  <button (click)="setOracle()" class="btn btn-primary" [disabled]="!isOwner">Set Oracle</button>
+</div>
+<hr>
+<div>
+  <h3>Fund Contract</h3>
+  <input class="form-control mb-2" type="text" [(ngModel)]="depositAmount" placeholder="Amount in ETH" />
+  <button (click)="deposit()" class="btn btn-success" [disabled]="!isOwner">Deposit</button>
 </div>

@@ -3,7 +3,8 @@ import { RouterModule, Routes } from '@angular/router';
 import { BuyPolicyComponent } from './pages/buy-policy/buy-policy.component';
 import { MyPoliciesComponent } from './pages/my-policies/my-policies.component';
 import { ClaimStatusComponent } from './pages/claim-status/claim-status.component';
-import { AdminDashboardComponent } from './pages/admin-dashboard/admin-dashboard.component';
+// import { AdminDashboardComponent } from './pages/admin-dashboard/admin-dashboard.component'; // admin disabled
+import { ContractDetailsComponent } from './pages/contract-details/contract-details.component';
 
 
 const routes: Routes = [
@@ -11,9 +12,9 @@ const routes: Routes = [
   { path: 'buy-policy', component: BuyPolicyComponent },
   { path: 'my-policies', component: MyPoliciesComponent },
   { path: 'claim-status', component: ClaimStatusComponent },
-  { path: '**', redirectTo: 'buy-policy' }, 
-  { path: 'admin', component: AdminDashboardComponent }
-
+  // { path: 'admin', component: AdminDashboardComponent }, // admin disabled
+  { path: 'contract', component: ContractDetailsComponent },
+  { path: '**', redirectTo: 'buy-policy' }
 ];
 
 @NgModule({

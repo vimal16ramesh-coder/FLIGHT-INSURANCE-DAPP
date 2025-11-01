@@ -59,10 +59,17 @@
                     </span>
                   </td>
                   <td class="text-center">
-  <button class="btn btn-outline-primary btn-sm" [disabled]="isClaimed(i)">
-    <i class="fas fa-file-claim mr-1"></i>File Claim
-  </button>
-</td>
+                    <button class="btn btn-outline-primary btn-sm"
+                            [disabled]="isClaimed(i) || txLoadingIndex === i"
+                            (click)="fileClaim(p, i)">
+                      <i *ngIf="txLoadingIndex !== i" class="fas fa-file-claim mr-1"></i>
+                      <span *ngIf="txLoadingIndex !== i">File Claim</span>
+                      <span *ngIf="txLoadingIndex === i">
+                        <i class="fas fa-spinner fa-spin mr-1"></i>Processing...
+                      </span>
+                    </button>
+                  </td>
+                  
 
 
                 </tr>
