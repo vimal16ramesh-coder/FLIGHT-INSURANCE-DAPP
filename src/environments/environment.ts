@@ -1,18 +1,11 @@
-// This file can be replaced during build by using the `fileReplacements` array.
-// `ng build --prod` replaces `environment.ts` with `environment.prod.ts`.
-// The list of file replacements can be found in `angular.json`.
-
+// src/environments/environment.ts
 export const environment = {
   production: false,
-  contractAddress: '0x9B89D071445C5ac084aBfa1EEb076A94B74635fc' // change per-network
+  apiBaseUrl: 'http://localhost:5000/api',   // <-- set to your backend base URL
+  contractAddress: '0x9B89D071445C5ac084aBfa1EEb076A94B74635fc',
+  // If you want to enable "local admin UI mode" without MetaMask, set allowLocalAdmin true
+  // and put ownerAddress (for reference). Note: transactions that need a signature will
+  // still require backend endpoints that hold the private key.
+  allowLocalAdmin: true,
+  ownerAddress: '0xYOUR_OWNER_ADDRESS_HERE'
 };
-
-
-/*
- * For easier debugging in development mode, you can import the following file
- * to ignore zone related error stack frames such as `zone.run`, `zoneDelegate.invokeTask`.
- *
- * This import should be commented out in production mode because it will have a negative impact
- * on performance if an error is thrown.
- */
-// import 'zone.js/dist/zone-error';  // Included with Angular CLI.

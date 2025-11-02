@@ -1,15 +1,16 @@
+// src/app/app.module.ts
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { FormsModule } from '@angular/forms'; // Needed for ngModel two-way binding
+import { FormsModule } from '@angular/forms';
+import { HttpClientModule } from '@angular/common/http';
 
-import { AppRoutingModule } from './app-routing.module'; // Your routing module
+import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 
-// Import your created components here
 import { BuyPolicyComponent } from './pages/buy-policy/buy-policy.component';
 import { MyPoliciesComponent } from './pages/my-policies/my-policies.component';
 import { ClaimStatusComponent } from './pages/claim-status/claim-status.component';
-// import { AdminDashboardComponent } from './pages/admin-dashboard/admin-dashboard.component'; // admin disabled
+import { AdminDashboardComponent } from './pages/admin-dashboard/admin-dashboard.component';
 import { ContractDetailsComponent } from './pages/contract-details/contract-details.component';
 
 @NgModule({
@@ -18,11 +19,13 @@ import { ContractDetailsComponent } from './pages/contract-details/contract-deta
     BuyPolicyComponent,
     MyPoliciesComponent,
     ClaimStatusComponent,
+    AdminDashboardComponent,
     ContractDetailsComponent
   ],
   imports: [
     BrowserModule,
-    FormsModule, // Add FormsModule here
+    FormsModule,
+    HttpClientModule,
     AppRoutingModule
   ],
   providers: [],
