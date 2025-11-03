@@ -26,7 +26,6 @@ export class ClaimStatusComponent implements OnInit {
     await this.loadPolicies();
     this.computeClaimStatusFromPolicies();
 
-    // debug pending withdrawal for your account (if provider available)
     if (this.walletService.account) {
       try {
         const pending = await this.contractService.getPendingWithdrawal(this.walletService.account);
@@ -35,6 +34,43 @@ export class ClaimStatusComponent implements OnInit {
         // ignore
       }
     }
+  }
+
+  private formatEthSafe(value: any): string | undefined {
+    try {
+      if (value === null || value === undefined) return undefined;
+      if ((ethers as any).BigNumber && (ethers as any).BigNumber.isBigNumber && (ethers as any).BigNumber.isBigNumber(value)) {
+        const v = (ethers as any).utils.formatEther(value);
+        const n = Number(v);
+        if (!isNaN(n)) return n.toFixed(6);
+        return undefined;
+      }
+      if (typeof value === 'object' && typeof value.toString === 'function') {
+        const s = value.toString();
+        if (/^[0-9]+(\.[0-9]+)?$/.test(s)) {
+          const n = Number(s);
+          if (!isNaN(n)) return n.toFixed(6);
+        }
+      }
+      if (typeof value === 'string') {
+        if (/^0x[0-9a-f]+$/i.test(value)) {
+          const v = (ethers as any).utils.formatEther(value);
+          const n = Number(v);
+          if (!isNaN(n)) return n.toFixed(6);
+          return undefined;
+        }
+        if (/^[0-9]+(\.[0-9]+)?$/.test(value)) {
+          const n = Number(value);
+          if (!isNaN(n)) return n.toFixed(6);
+        }
+      }
+      if (typeof value === 'number') {
+        if (!isNaN(value)) return value.toFixed(6);
+      }
+    } catch (e) {
+      console.warn('formatEthSafe failed for value:', value, e);
+    }
+    return undefined;
   }
 
   // load policies using the contract helper that iterates policyCount
@@ -49,17 +85,23 @@ export class ClaimStatusComponent implements OnInit {
     try {
       const raw = await this.contractService.getPoliciesForUser(this.walletService.account);
       // normalize BigNumbers and make safe fields for templates
-      this.policies = raw.map((p: any) => ({
-        id: p.id,
-        user: p.user,
-        flightId: p.flightId,
-        date: p.date ?? undefined, // may be BigNumber or undefined
-        premium: p.premium ?? undefined,
-        premiumEth: p.premium ? Number(ethers.utils.formatEther(p.premium)).toFixed(6) : undefined,
-        payoutAmount: p.payoutAmount ?? undefined,
-        payoutEth: p.payoutAmount ? Number(ethers.utils.formatEther(p.payoutAmount)).toFixed(6) : undefined,
-        active: typeof p.active === 'boolean' ? p.active : !!p.active
-      }));
+      this.policies = raw.map((p: any) => {
+        const idNum = (typeof p.id === 'number') ? p.id : (Number(p.id) || 0);
+        const premiumEth = this.formatEthSafe(p.premium);
+        const payoutEth = this.formatEthSafe(p.payoutAmount);
+        return {
+          id: idNum,
+          policyId: `PN${(idNum + 1)}`,
+          user: p.user,
+          flightId: p.flightId,
+          date: p.date ?? undefined,
+          premium: p.premium ?? undefined,
+          premiumEth,
+          payoutAmount: p.payoutAmount ?? undefined,
+          payoutEth,
+          active: typeof p.active === 'boolean' ? p.active : !!p.active
+        };
+      });
       console.log('normalized policies for UI:', this.policies);
     } catch (err) {
       console.error('Failed loading policies:', err);
@@ -115,14 +157,7 @@ export class ClaimStatusComponent implements OnInit {
 
   /**
    * fileClaim:
-   * - If backend is available it will call backend endpoint to request the flight status update (recommended).
-   * - Backend is expected to run the oracle/contract-side updateFlightStatus, and then credit pendingWithdrawals.
-   *
-   * Expected backend endpoint (example):
-   * POST `${environment.apiBaseUrl}/flight/updateStatus`
-   * body: { policyId: number, delayed: boolean }
-   *
-   * Modify the endpoint path to match your backend.
+   * body: { policyId: string, delayed: boolean }
    */
   async fileClaim(policy: any, index: number) {
     if (!this.walletService.account) {
@@ -134,15 +169,12 @@ export class ClaimStatusComponent implements OnInit {
 
     this.txLoadingIndex = index;
     try {
-      // call backend API to mark flight delayed (backend will call the contract as oracle)
       const url = `${environment.apiBaseUrl.replace(/\/$/, '')}/flight/updateStatus`;
-      // sample body; change field names if your backend expects different.
-      const body = { policyId: policy.id, delayed: true };
+      const policyIdentifier = policy.policyId ?? (typeof policy.id === 'number' ? (`PN${policy.id + 1}`) : policy.id);
+      const body = { policyId: policyIdentifier, delayed: true };
 
       const resp: any = await this.http.post(url, body).toPromise();
-      // backend should return something like { success: true, message: "...", txHash: "0x..." }
       if (resp && (resp.success === true || resp.txHash)) {
-        // wait a little and reload UI (backend already did on-chain work)
         await this.loadPolicies();
         alert('Claim request sent. Backend confirmed update (tx: ' + (resp.txHash || 'n/a') + ').');
       } else {
@@ -152,7 +184,6 @@ export class ClaimStatusComponent implements OnInit {
       }
     } catch (err) {
       console.error('Claim (backend) failed', err);
-      // graceful extraction of msg
       const msg = (err && (err as any).message) ? (err as any).message : JSON.stringify(err);
       alert('Claim failed: ' + msg);
     } finally {

@@ -1,3 +1,4 @@
+<!-- src/app/pages/admin-dashboard/admin-dashboard.component.html -->
 <div *ngIf="!isOwner" class="alert alert-warning">
   You are not the contract owner. You can view data, but admin actions are disabled.
   Ask the owner to perform admin actions or deploy a contract where you are the owner.
@@ -21,4 +22,53 @@
   <h3>Fund Contract</h3>
   <input class="form-control mb-2" type="text" [(ngModel)]="depositAmount" placeholder="Amount in ETH" />
   <button (click)="deposit()" class="btn btn-success" [disabled]="!isOwner">Deposit</button>
+</div>
+
+<hr />
+
+<div class="mb-3">
+  <h3>All Policies (admin)</h3>
+
+  <div *ngIf="loadingPolicies" class="small text-muted">Loading policies...</div>
+
+  <div *ngIf="!loadingPolicies && allPolicies?.length === 0" class="small text-muted">No policies found.</div>
+
+  <div *ngIf="allPolicies?.length">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover">
+        <thead class="thead-light">
+          <tr>
+            <th>Policy id</th>
+            <th>User</th>
+            <th>Flight ID</th>
+            <th>Premium (ETH)</th>
+            <th>Payout (ETH)</th>
+            <th>Date</th>
+            <th>Active</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of allPolicies; let i = index">
+            <td><strong>{{ p.policyId }}</strong></td>
+            <td><small class="text-monospace">{{ p.user }}</small></td>
+            <td>{{ p.flightId }}</td>
+            <td>{{ p.premiumEth || '-' }}</td>
+            <td>{{ p.payoutEth || '-' }}</td>
+            <td>{{ p.dateFormatted ? (p.dateFormatted | date:'medium') : '-' }}</td>
+            <td>
+              <span class="badge" [ngClass]="p.active ? 'badge-success' : 'badge-secondary'">
+                {{ p.active ? 'Active' : 'Closed' }}
+              </span>
+            </td>
+            <td>
+              <button class="btn btn-sm btn-outline-primary" (click)="requestBackendClaim(p)" [disabled]="!isOwner">
+                Send Claim
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>

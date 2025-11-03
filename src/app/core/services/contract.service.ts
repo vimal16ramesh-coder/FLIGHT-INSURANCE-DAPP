@@ -116,4 +116,32 @@ export class ContractService {
     const tx = await contract.withdrawPayout();
     return tx.wait();
   }
+  async getAllPolicies() {
+    const contract = await this.createContract(true);
+    const countBN = await contract.policyCount();
+    const count = (countBN && countBN.toNumber) ? countBN.toNumber() : Number(countBN);
+    const policies: any[] = [];
+
+    for (let i = 0; i < count; i++) {
+      try {
+        const p = await contract.policies(i);
+        // p: (user, flightId, premium, payoutAmount, active [, date?])
+        const possibleDate = (p as any).date ?? (p as any)[5];
+        policies.push({
+          id: i,
+          user: p.user,
+          flightId: p.flightId,
+          premium: ethers.utils.formatEther(p.premium ? p.premium.toString() : '0'),
+          payoutAmount: ethers.utils.formatEther((p as any).payoutAmount ? (p as any).payoutAmount.toString() : '0'),
+          active: (typeof p.active !== 'undefined') ? p.active : (p[4] ?? true),
+          date: possibleDate ? new Date(Number(possibleDate) * 1000).toISOString() : null
+        });
+      } catch (err) {
+        // continue on failure for this index
+        console.warn('Failed to read policy index', i, err);
+      }
+    }
+
+    return policies;
+  }
 }

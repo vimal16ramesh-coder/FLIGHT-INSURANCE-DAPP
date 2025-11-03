@@ -13,6 +13,7 @@ import { ClaimStatusComponent } from './pages/claim-status/claim-status.componen
 import { AdminDashboardComponent } from './pages/admin-dashboard/admin-dashboard.component';
 import { ContractDetailsComponent } from './pages/contract-details/contract-details.component';
 
+
 @NgModule({
   declarations: [
     AppComponent,
@@ -26,7 +27,7 @@ import { ContractDetailsComponent } from './pages/contract-details/contract-deta
     BrowserModule,
     FormsModule,
     HttpClientModule,
-    AppRoutingModule
+    AppRoutingModule,
   ],
   providers: [],
   bootstrap: [AppComponent]
