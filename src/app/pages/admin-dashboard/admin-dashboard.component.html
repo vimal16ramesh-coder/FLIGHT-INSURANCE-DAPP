@@ -1,7 +1,6 @@
 <!-- src/app/pages/admin-dashboard/admin-dashboard.component.html -->
 <div *ngIf="!isOwner" class="alert alert-warning">
-  You are not the contract owner. You can view data, but admin actions are disabled.
-  Ask the owner to perform admin actions or deploy a contract where you are the owner.
+  You are not the on-chain contract owner. Admin actions (set oracle, deposit) require the owner wallet to be connected — there is no backend fallback for these actions.
 </div>
 
 <h2>Admin Dashboard</h2>
@@ -15,13 +14,13 @@
 <div class="mb-3">
   <h3>Set Oracle Address</h3>
   <input class="form-control mb-2" type="text" [(ngModel)]="oracleInput" placeholder="Oracle Address" />
-  <button (click)="setOracle()" class="btn btn-primary" [disabled]="!isOwner">Set Oracle</button>
+  <button (click)="setOracle()" class="btn btn-primary" [disabled]="!isOwner">Set Oracle (owner only)</button>
 </div>
 <hr>
 <div>
   <h3>Fund Contract</h3>
   <input class="form-control mb-2" type="text" [(ngModel)]="depositAmount" placeholder="Amount in ETH" />
-  <button (click)="deposit()" class="btn btn-success" [disabled]="!isOwner">Deposit</button>
+  <button (click)="deposit()" class="btn btn-success" [disabled]="!isOwner">Deposit (owner only)</button>
 </div>
 
 <hr />

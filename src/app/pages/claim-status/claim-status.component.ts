@@ -169,8 +169,10 @@ export class ClaimStatusComponent implements OnInit {
 
     this.txLoadingIndex = index;
     try {
-      const url = `${environment.apiBaseUrl.replace(/\/$/, '')}/flight/updateStatus`;
-      const policyIdentifier = policy.policyId ?? (typeof policy.id === 'number' ? (`PN${policy.id + 1}`) : policy.id);
+      console.log(policy.id);
+      console.log(policy);
+      const url = `${environment.apiBaseUrl.replace(/\/$/, '')}/update-flight`;
+      const policyIdentifier = policy.id;
       const body = { policyId: policyIdentifier, delayed: true };
 
       const resp: any = await this.http.post(url, body).toPromise();
@@ -187,6 +189,20 @@ export class ClaimStatusComponent implements OnInit {
       const msg = (err && (err as any).message) ? (err as any).message : JSON.stringify(err);
       alert('Claim failed: ' + msg);
     } finally {
+      try {
+          const receipt = await this.contractService.withdrawPayout();
+          console.log('withdraw tx receipt', receipt);
+          await this.loadPolicies();
+          alert('Withdraw successful: transaction confirmed. Check wallet or explorer.');
+        } catch (onchainErr) {
+          console.error('Withdraw on-chain failed', onchainErr);
+          // extract reason if available
+          const reason =
+            (onchainErr && onchainErr.error && onchainErr.error.message) ? onchainErr.error.message
+            : (onchainErr && onchainErr.message) ? onchainErr.message
+            : String(onchainErr);
+          alert('Withdraw failed: ' + reason);
+        }
       this.txLoadingIndex = null;
     }
   }

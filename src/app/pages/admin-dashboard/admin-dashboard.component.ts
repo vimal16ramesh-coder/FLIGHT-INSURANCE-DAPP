@@ -17,7 +17,7 @@ export class AdminDashboardComponent implements OnInit {
   oracleInput: string = '';
   depositAmount: string = '';
 
-  // new: admin-wide policies list
+  // admin policy list (unchanged)
   allPolicies: any[] = [];
   loadingPolicies = false;
 
@@ -31,64 +31,13 @@ export class AdminDashboardComponent implements OnInit {
     await this.checkIsOwner();
     await this.loadContractBalance();
     await this.loadOracle();
-    // load all policies for admin view
     await this.loadAllPolicies();
   }
 
   /**
-   * Safe ETH formatter that accepts BigNumber, numeric strings, and numbers.
-   * Returns a fixed string (6 decimals) or undefined on failure.
-   */
-  private formatEthSafe(value: any): string | undefined {
-    try {
-      if (value === null || value === undefined) return undefined;
-
-      // ethers.BigNumber check
-      if ((ethers as any).BigNumber && (ethers as any).BigNumber.isBigNumber && (ethers as any).BigNumber.isBigNumber(value)) {
-        const v = (ethers as any).utils.formatEther(value);
-        const n = Number(v);
-        if (!isNaN(n)) return n.toFixed(6);
-        return undefined;
-      }
-
-      // value might be an object with toString (sometimes libs)
-      if (typeof value === 'object' && typeof value.toString === 'function') {
-        const s = value.toString();
-        if (/^[0-9]+(\.[0-9]+)?$/.test(s)) {
-          const n = Number(s);
-          if (!isNaN(n)) return n.toFixed(6);
-        }
-      }
-
-      // string decimal like "0.01" or "0" or numeric hex
-      if (typeof value === 'string') {
-        // if hex-like (0x...), try BigNumber
-        if (/^0x[0-9a-f]+$/i.test(value)) {
-          const v = (ethers as any).utils.formatEther(value);
-          const n = Number(v);
-          if (!isNaN(n)) return n.toFixed(6);
-          return undefined;
-        }
-        // plain decimal string
-        if (/^[0-9]+(\.[0-9]+)?$/.test(value)) {
-          const n = Number(value);
-          if (!isNaN(n)) return n.toFixed(6);
-        }
-      }
-
-      // number
-      if (typeof value === 'number') {
-        if (!isNaN(value)) return value.toFixed(6);
-      }
-    } catch (e) {
-      // swallow and return undefined
-      console.warn('formatEthSafe failed for value:', value, e);
-    }
-    return undefined;
-  }
-
-  /**
-   * Determine owner:
+   * Check on-chain owner only.
+   * NOTE: we intentionally do NOT fall back to environment.allowLocalAdmin here.
+   * Admin actions (setOracle, deposit) require an on-chain owner connected.
    */
   async checkIsOwner() {
     try {
@@ -96,16 +45,12 @@ export class AdminDashboardComponent implements OnInit {
       const acct = this.walletService.account;
       if (acct && ownerOnChain && ownerOnChain.toLowerCase() === acct.toLowerCase()) {
         this.isOwner = true;
-        console.log('Connected account is contract owner. Admin UI enabled.');
         return;
       }
+      this.isOwner = false;
     } catch (e) {
       console.warn('Owner check failed:', e);
-      if ((environment as any).allowLocalAdmin && (environment as any).ownerAddress) {
-        this.isOwner = true;
-      } else {
-        this.isOwner = false;
-      }
+      this.isOwner = false;
     }
   }
 
@@ -127,37 +72,20 @@ export class AdminDashboardComponent implements OnInit {
     }
   }
 
-  // --- NEW: load all policies for admin dashboard (robust parsing) ---
+  // --- loadAllPolicies (keeps admin table working) ---
   async loadAllPolicies() {
     this.loadingPolicies = true;
     try {
       const raw = await this.contractService.getAllPolicies();
       this.allPolicies = (raw || []).map((p: any) => {
         const idNum = (typeof p.id === 'number') ? p.id : (Number(p.id) || 0);
-        const premiumEth = this.formatEthSafe(p.premium);
-        const payoutEth = this.formatEthSafe(p.payoutAmount);
-        let dateFormatted: string | null = null;
-        try {
-          if (p && p.date) {
-            if ((p.date as any).toNumber && typeof (p.date as any).toNumber === 'function') {
-              dateFormatted = new Date((p.date as any).toNumber() * 1000).toISOString();
-            } else if (typeof p.date === 'string' && /^\d+$/.test(p.date)) {
-              dateFormatted = new Date(Number(p.date) * 1000).toISOString();
-            } else if (typeof p.date === 'number') {
-              dateFormatted = new Date(p.date * 1000).toISOString();
-            }
-          }
-        } catch (e) {
-          console.warn('Failed to parse date for policy', p, e);
-        }
-
         return {
           ...p,
           id: idNum,
           policyId: `PN${idNum + 1}`,
-          premiumEth,
-          payoutEth,
-          dateFormatted
+          premiumEth: p.premium ? this.safeFormatEth(p.premium) : undefined,
+          payoutEth: p.payoutAmount ? this.safeFormatEth(p.payoutAmount) : undefined,
+          dateFormatted: p.date ? ( (typeof p.date.toNumber === 'function') ? new Date(p.date.toNumber() * 1000).toISOString() : (typeof p.date === 'string' ? new Date(Number(p.date) * 1000).toISOString() : null) ) : null
         };
       });
     } catch (err) {
@@ -168,74 +96,81 @@ export class AdminDashboardComponent implements OnInit {
     }
   }
 
-  // Set oracle (unchanged from previous)
+  // small helper to format ether-like values (keeps UI safe)
+  private safeFormatEth(value: any): string | undefined {
+    try {
+      if ((ethers as any).BigNumber && (ethers as any).BigNumber.isBigNumber && (ethers as any).BigNumber.isBigNumber(value)) {
+        return Number((ethers as any).utils.formatEther(value)).toFixed(6);
+      }
+      if (typeof value === 'string' && /^[0-9]+(\.[0-9]+)?$/.test(value)) {
+        return Number(value).toFixed(6);
+      }
+      if (typeof value === 'number') {
+        return value.toFixed(6);
+      }
+    } catch (e) {
+      console.warn('safeFormatEth failed', e);
+    }
+    return undefined;
+  }
+
+  /**
+   * setOracle:
+   * - NOW: only attempt on-chain via signer when connected account is the on-chain owner.
+   * - No backend fallback (by design as per your instruction).
+   */
   async setOracle() {
     if (!this.oracleInput) { alert('Enter oracle address'); return; }
 
     try {
       const ownerOnChain = await this.contractService.getOwner();
       const acct = this.walletService.account;
-      if (acct && ownerOnChain && ownerOnChain.toLowerCase() === acct.toLowerCase()) {
-        await this.contractService.setOracle(this.oracleInput);
-        await this.loadOracle();
-        alert('Oracle set on-chain successfully.');
+      if (!acct || !ownerOnChain || ownerOnChain.toLowerCase() !== acct.toLowerCase()) {
+        alert('You must connect the contract owner wallet to set the oracle (no backend fallback).');
         return;
       }
-    } catch (e) {
-      console.warn('Direct setOracle attempt failed, will try backend if configured', e);
-    }
 
-    try {
-      const url = `${environment.apiBaseUrl.replace(/\/$/, '')}/admin/setOracle`;
-      const body = { oracle: this.oracleInput };
-      const resp: any = await this.http.post(url, body).toPromise();
-      if (resp && resp.success) {
-        await this.loadOracle();
-        alert('Oracle set via backend (owner action).');
-      } else {
-        alert('Backend setOracle failed: ' + (resp && resp.message ? resp.message : 'unknown'));
-      }
+      // perform on-chain call via contractService (signer required)
+      await this.contractService.setOracle(this.oracleInput);
+      await this.loadOracle();
+      alert('Oracle set on-chain successfully.');
     } catch (err) {
-      console.error('Backend setOracle failed', err);
-      alert('Failed to set oracle: ' + ((err && (err as any).message) ? (err as any).message : String(err)));
+      console.error('setOracle on-chain failed', err);
+      alert('Failed to set oracle on-chain: ' + ((err && (err as any).message) ? (err as any).message : String(err)));
     }
   }
 
-  // Deposit (unchanged)
+  /**
+   * deposit:
+   * - NOW: only attempt on-chain deposit when connected owner wallet is available.
+   * - No backend fallback.
+   */
   async deposit() {
     if (!this.depositAmount) { alert('Enter deposit amount in ETH'); return; }
 
     try {
       const ownerOnChain = await this.contractService.getOwner();
       const acct = this.walletService.account;
-      if (acct && ownerOnChain && ownerOnChain.toLowerCase() === acct.toLowerCase()) {
-        const wei = ethers.utils.parseEther(this.depositAmount).toString();
-        await this.contractService.deposit(wei);
-        await this.loadContractBalance();
-        alert('Deposit sent on-chain.');
+      if (!acct || !ownerOnChain || ownerOnChain.toLowerCase() !== acct.toLowerCase()) {
+        alert('You must connect the contract owner wallet to deposit funds (no backend fallback).');
         return;
       }
-    } catch (e) {
-      console.warn('Direct deposit failed, will try backend', e);
-    }
 
-    try {
-      const url = `${environment.apiBaseUrl.replace(/\/$/, '')}/admin/deposit`;
-      const body = { amountEth: this.depositAmount };
-      const resp: any = await this.http.post(url, body).toPromise();
-      if (resp && resp.success) {
-        await this.loadContractBalance();
-        alert('Deposit requested via backend.');
-      } else {
-        alert('Backend deposit failed: ' + (resp && resp.message ? resp.message : 'unknown'));
-      }
+      const wei = ethers.utils.parseEther(this.depositAmount).toString();
+      await this.contractService.deposit(wei);
+      await this.loadContractBalance();
+      alert('Deposit sent on-chain.');
     } catch (err) {
-      console.error('Backend deposit failed', err);
+      console.error('Deposit on-chain failed', err);
       alert('Deposit failed: ' + ((err && (err as any).message) ? (err as any).message : String(err)));
     }
   }
 
-  // --- NEW: admin request to backend for a specific policy ---
+  /**
+   * requestBackendClaim:
+   * - Filing claims remains a backend operation (backend will call updateFlightStatus from oracle account).
+   * - We keep this behavior; backend is allowed for claim requests.
+   */
   async requestBackendClaim(policy: any) {
     if (!this.isOwner) {
       alert('Only owner can perform this action.');
